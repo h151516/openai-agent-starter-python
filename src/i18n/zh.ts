@@ -1,26 +1,26 @@
 const zh = {
   // Header
-  "app.title": "OpenAI Agents Starter",
-  "app.subtitle": "运行在 EdgeOne Makers 上，支持会话记忆、Agent Tools",
+  "app.title": "出行决策助手",
+  "app.subtitle": "告诉我你在哪、想逛什么品牌，我帮你挑最近的商场",
 
   // Empty state
-  "empty.title": "OpenAI Agents Starter",
-  "empty.hint": "我是运行在 EdgeOne 环境中的 OpenAI Agents，支持自定义工具、会话记忆，并帮助你完成天气查询、穿衣建议、翻译和文本统计。",
-  "empty.features": "EdgeOne Store · Session Memory · Agent Tools",
+  "empty.title": "出行决策助手",
+  "empty.hint": "我可以帮你查询附近的商场，核对里面有没有你想要的品牌门店，再按距离给出推荐。试试告诉我你的位置和想找的品牌。",
+  "empty.features": "高德地图 · 品牌核对 · 距离比较 · 多轮追问",
 
   // Chat input
-  "chat.placeholder": "发消息…  ⏎ 发送 · Shift+⏎ 换行",
-  "chat.hint": "由 OpenAI Agents SDK + EdgeOne Makers 驱动 · 仅供演示",
+  "chat.placeholder": "说说你在哪、想找什么…  ⏎ 发送 · Shift+⏎ 换行",
+  "chat.hint": "由 OpenAI Agents SDK + 高德地图 + EdgeOne Makers 驱动",
 
   // Preset questions
-  "preset.1": "现在北京天气怎么样，有什么穿衣建议吗？",
-  "preset.2": "帮我翻译英文\"你好，欢迎来到北京！\"，并统计翻译字符数。",
+  "preset.1": "我在红莲南路地铁站附近，想找一个既有倍轻松又有西厅村屋的商场，帮我推荐。",
+  "preset.2": "如果不要求两个品牌同时存在，还有没有距离更近的选择？",
 
   // Tool indicators
-  "tool.weather": "天气查询",
-  "tool.clothing": "穿衣建议",
-  "tool.translate": "文本翻译",
-  "tool.statistics": "文本统计",
+  "tool.location": "地点解析",
+  "tool.malls": "商场检索",
+  "tool.brand": "品牌核对",
+  "tool.distance": "距离测量",
 
   // Status & errors
   "status.error": "⚠️ 请求失败，请检查后端服务是否启动。",

@@ -39,3 +39,10 @@ plan/
 # AI assistant local instructions
 CLAUDE.md
 AGENTS.md
+
+# 本地运行时产物
+.local/
+local_dev.log
+node_modules_broken/
+# 重装依赖前临时挪走的旧目录，确认无误后可删除
+_trash/

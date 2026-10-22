@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>出行决策助手 · 本地运行</title>
+<style>
+  :root{
+    --bg:#f6f5f2; --panel:#ffffff; --line:#e5e2dc; --ink:#22201d; --sub:#7b756c;
+    --accent:#1f6f5c; --accent-soft:#e7f2ee; --warn:#b4531f; --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:15px/1.65 "PingFang SC","Microsoft YaHei",-apple-system,"Segoe UI",sans-serif;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  header{width:100%;max-width:860px;padding:26px 20px 12px;}
+  h1{font-size:19px;margin:0 0 4px;letter-spacing:.2px;}
+  .sub{color:var(--sub);font-size:12.5px;}
+  .lamps{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+  .lamp{
+    display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--sub);
+    background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 11px;
+    transition:.25s;
+  }
+  .lamp b{font-weight:600;}
+  .lamp.on{background:var(--accent-soft);border-color:#bfdcd3;color:var(--accent);}
+  .lamp.on .dot{background:var(--accent);box-shadow:0 0 0 3px rgba(31,111,92,.15);}
+  .dot{width:6px;height:6px;border-radius:50%;background:#cfcac2;transition:.25s;}
+  main{
+    width:100%;max-width:860px;flex:1;display:flex;flex-direction:column;
+    padding:0 20px;overflow:hidden;
+  }
+  #log{flex:1;overflow-y:auto;padding:8px 0 18px;display:flex;flex-direction:column;gap:14px;}
+  .msg{display:flex;gap:10px;max-width:100%;}
+  .msg.user{justify-content:flex-end;}
+  .bubble{
+    padding:11px 15px;border-radius:var(--radius);max-width:78%;white-space:pre-wrap;
+    word-break:break-word;border:1px solid transparent;
+  }
+  .user .bubble{background:var(--accent);color:#fff;border-bottom-right-radius:5px;}
+  .bot .bubble{background:var(--panel);border-color:var(--line);border-bottom-left-radius:5px;
+    white-space:normal;}
+  .bot .bubble.err{background:#fdf3ec;border-color:#f0d3bd;color:var(--warn);}
+  /* 回答里的表格 / 引用块（演示模式下回复就是 Markdown 表格） */
+  .bot .bubble table{border-collapse:collapse;margin:10px 0;font-size:12.8px;width:100%;}
+  .bot .bubble th,.bot .bubble td{border:1px solid var(--line);padding:5px 9px;text-align:left;}
+  .bot .bubble th{background:#faf9f6;font-weight:600;white-space:nowrap;}
+  .bot .bubble blockquote{margin:10px 0;padding:7px 11px;border-left:3px solid var(--accent);
+    background:var(--accent-soft);color:#3d4a45;font-size:12.4px;border-radius:0 8px 8px 0;}
+  .bot .bubble .ln{min-height:2px;}
+  .caret{display:inline-block;width:7px;height:14px;background:currentColor;opacity:.55;
+    vertical-align:-2px;animation:blink .9s steps(1) infinite;margin-left:2px;}
+  @keyframes blink{50%{opacity:0}}
+  .empty{color:var(--sub);text-align:center;padding:48px 12px;font-size:13.5px;line-height:2;}
+  .presets{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:16px;}
+  .preset{
+    cursor:pointer;background:var(--panel);border:1px solid var(--line);border-radius:999px;
+    padding:7px 14px;font-size:12.5px;color:var(--ink);transition:.2s;font-family:inherit;
+  }
+  .preset:hover{border-color:var(--accent);color:var(--accent);}
+  footer{width:100%;max-width:860px;padding:12px 20px 24px;border-top:1px solid var(--line);background:var(--bg);}
+  .inputbar{display:flex;gap:10px;align-items:flex-end;}
+  textarea{
+    flex:1;resize:none;border:1px solid var(--line);border-radius:12px;padding:11px 14px;
+    font:inherit;background:var(--panel);outline:none;min-height:46px;max-height:150px;
+  }
+  textarea:focus{border-color:var(--accent);}
+  button.send{
+    border:none;background:var(--accent);color:#fff;border-radius:12px;padding:0 20px;
+    height:46px;font:inherit;font-weight:600;cursor:pointer;transition:.2s;
+  }
+  button.send:disabled{opacity:.45;cursor:not-allowed;}
+  .hintbar{display:flex;justify-content:space-between;font-size:11.5px;color:var(--sub);margin-top:7px;}
+  #cid{font-family:ui-monospace,Menlo,monospace;}
+</style>
+</head>
+<body>
+<header>
+  <h1>出行决策助手</h1>
+  <div class="sub">本地运行时 · 与线上同一套 SSE 协议<span id="mode"></span></div>
+  <div class="lamps" id="lamps"></div>
+</header>
+
+<main>
+  <div id="log">
+    <div class="empty" id="empty">
+      说一个地点和你的品牌偏好，我来找附近能同时满足的商场。<br />
+      <span style="font-size:12px;color:#a39d93">例：我在红莲南路地铁站附近，想逛既有倍轻松又有西厅村屋的商场</span>
+      <div class="presets">
+        <button class="preset">我在红莲南路地铁站附近，我想要去一个既有倍轻松又有西厅村屋的离得近的商场，帮我推荐。</button>
+        <button class="preset">如果不要求两个品牌同时存在，还有没有距离更近的选择？</button>
+        <button class="preset">我在红莲南路地铁站附近，帮我找找最近的商场</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="inputbar">
+    <textarea id="input" rows="1" placeholder="说说你在哪、想逛什么品牌…  ⏎ 发送 · Shift+⏎ 换行"></textarea>
+    <button class="send" id="send">发送</button>
+  </div>
+  <div class="hintbar">
+    <span>OpenAI Agents SDK · 高德地图工具 ×4</span>
+    <span>会话 <span id="cid">-</span></span>
+  </div>
+</footer>
+
+<script>
+const TOOLS = [
+  { id: 'resolve_location',     icon: '📍', label: '地址解析' },
+  { id: 'search_nearby_malls',  icon: '🏬', label: '周边商场' },
+  { id: 'search_brand_in_mall', icon: '🛍️', label: '品牌核对' },
+  { id: 'measure_distance',     icon: '📏', label: '距离测量' },
+];
+
+const cid = localStorage.getItem('local_cid') || crypto.randomUUID();
+localStorage.setItem('local_cid', cid);
+// handler 只在 user_id + conversation_id 同时存在时才写用户索引，
+// 不传 userId 的话 /history 与 /conversations 都是空的。
+const uid = localStorage.getItem('local_uid') || ('u-' + crypto.randomUUID().slice(0, 8));
+localStorage.setItem('local_uid', uid);
+document.getElementById('cid').textContent = cid.slice(0, 8);
+
+// --- 运行模式徽标：让"演示数据 / 本地规则回答"在界面上也能看出来 ---
+fetch('/status').then(r => r.json()).then(s => {
+  const bits = [];
+  if (s.demo) bits.push('本地规则回答（未配置模型 Key）');
+  if (s.mock) bits.push('地图数据为内置演示样例');
+  if (bits.length) {
+    document.getElementById('mode').innerHTML =
+      ' · <span style="color:#b4531f">' + bits.join(' · ') + '</span>';
+  }
+}).catch(() => {});
+
+// --- 灯牌 ---
+const lampEls = {};
+const lampsBox = document.getElementById('lamps');
+TOOLS.forEach(t => {
+  const el = document.createElement('div');
+  el.className = 'lamp';
+  el.innerHTML = `<span class="dot"></span><span>${t.icon}</span><b>${t.label}</b>`;
+  lampsBox.appendChild(el);
+  lampEls[t.id] = el;
+});
+function flashLamp(name) {
+  const el = lampEls[name];
+  if (!el) return;
+  el.classList.add('on');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('on'), 2200);
+}
+
+// --- 消息渲染 ---
+const log = document.getElementById('log');
+const empty = document.getElementById('empty');
+function clearEmpty() { if (empty && empty.parentNode) empty.remove(); }
+
+function addBubble(role, text) {
+  clearEmpty();
+  const row = document.createElement('div');
+  row.className = 'msg ' + (role === 'user' ? 'user' : 'bot');
+  const b = document.createElement('div');
+  b.className = 'bubble';
+  b.textContent = text;
+  row.appendChild(b);
+  log.appendChild(row);
+  log.scrollTop = log.scrollHeight;
+  return b;
+}
+
+// --- 轻量 Markdown 渲染：段落 / 表格 / 引用 / 加粗 ---
+// 只覆盖 Agent 回答里真正用到的语法，避免为了预览页再引一个 md 库。
+function esc(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function bold(s) {
+  return s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+}
+function cells(line) {
+  return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(s => s.trim());
+}
+function mdToHtml(md) {
+  const lines = md.split('\n');
+  const out = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // 表格：当前行以 | 开头，且下一行是 |---|---| 分隔行
+    if (/^\|/.test(line.trim()) && i + 1 < lines.length && /^\|[\s:|-]+\|$/.test(lines[i + 1].trim())) {
+      const head = cells(line);
+      i += 2;
+      const rows = [];
+      while (i < lines.length && /^\|/.test(lines[i].trim())) { rows.push(cells(lines[i])); i++; }
+      out.push('<table><thead><tr>' + head.map(c => '<th>' + bold(esc(c)) + '</th>').join('') +
+        '</tr></thead><tbody>' + rows.map(r => '<tr>' + r.map(c => '<td>' + bold(esc(c)) + '</td>').join('') +
+        '</tr>').join('') + '</tbody></table>');
+      continue;
+    }
+
+    // 引用块
+    if (/^>\s?/.test(line)) {
+      const buf = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) { buf.push(lines[i].replace(/^>\s?/, '')); i++; }
+      out.push('<blockquote>' + bold(esc(buf.join(' '))) + '</blockquote>');
+      continue;
+    }
+
+    out.push('<div class="ln">' + (line.trim() ? bold(esc(line)) : '&nbsp;') + '</div>');
+    i++;
+  }
+  return out.join('');
+}
+
+function render(el, text, streaming) {
+  el.innerHTML = mdToHtml(text) + (streaming ? '<span class="caret"></span>' : '');
+  log.scrollTop = log.scrollHeight;
+}
+
+// --- 发送 ---
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+let busy = false;
+
+async function send(text) {
+  if (busy || !text.trim()) return;
+  busy = true;
+  sendBtn.disabled = true;
+  addBubble('user', text);
+  const bubble = addBubble('bot', '');
+  let acc = '';
+  let failed = false;
+
+  try {
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'makers-conversation-id': cid },
+      body: JSON.stringify({ message: text, userId: uid }),
+    });
+    if (!res.ok || !res.body) throw new Error('HTTP ' + res.status);
+
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const parts = buf.split('\n\n');
+      buf = parts.pop() || '';
+      for (const part of parts) {
+        let ev = '', data = '';
+        for (const line of part.split('\n')) {
+          if (line.startsWith('event: ')) ev = line.slice(7);
+          else if (line.startsWith('data: ')) data = line.slice(6);
+        }
+        if (!ev || !data) continue;
+        let payload = {};
+        try { payload = JSON.parse(data); } catch { continue; }
+
+        if (ev === 'text_delta') {
+          acc += payload.delta || '';
+          render(bubble, acc, true);
+        } else if (ev === 'tool_called') {
+          flashLamp(payload.tool);
+        } else if (ev === 'error') {
+          failed = true;
+          bubble.classList.add('err');
+          render(bubble, '⚠ ' + (payload.message || '出错了') +
+            (payload.detail ? '\n\n' + (typeof payload.detail === 'string' ? payload.detail : JSON.stringify(payload.detail, null, 2)) : ''), false);
+        }
+      }
+    }
+    if (!failed) render(bubble, acc || '（没有返回内容）', false);
+  } catch (e) {
+    bubble.classList.add('err');
+    render(bubble, '⚠ 请求失败：' + e.message, false);
+  } finally {
+    if (!bubble.textContent) bubble.textContent = '（空响应）';
+    busy = false;
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+
+function submit() {
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  input.style.height = 'auto';
+  send(text);
+}
+
+sendBtn.onclick = submit;
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
+});
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 150) + 'px';
+});
+document.querySelectorAll('.preset').forEach(b => {
+  b.onclick = () => { input.value = b.textContent; submit(); };
+});
+input.focus();
+</script>
+</body>
+</html>

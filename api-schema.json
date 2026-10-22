@@ -1,0 +1,62 @@
+[
+  {
+    "name": "resolve_location",
+    "description": "把用户提到的地点原文解析成经纬度和城市。任何涉及「我在哪里」「附近」的请求都必须先调用本工具，不得凭常识猜测坐标。",
+    "method": "GET",
+    "endpoint": "/v3/geocode/geo",
+    "provider": "https://restapi.amap.com",
+    "params": {
+      "key": "${AMAP_API_KEY}",
+      "address": "用户输入的地点原文，如「红莲南路地铁站」",
+      "city": "限定城市，可为空"
+    },
+    "returns": ["formatted_address", "city", "district", "location(lng,lat)", "level"]
+  },
+  {
+    "name": "search_nearby_malls",
+    "description": "以给定坐标为圆心搜索附近的商场，按距离由近到远返回。POI 分类码限定 060100（购物中心）。",
+    "method": "GET",
+    "endpoint": "/v3/place/around",
+    "provider": "https://restapi.amap.com",
+    "params": {
+      "key": "${AMAP_API_KEY}",
+      "location": "圆心坐标，格式 lng,lat",
+      "keywords": "默认「商场」，可换成「购物中心」「百货」",
+      "types": "060100",
+      "radius": "搜索半径（米），默认 3000，上限 50000",
+      "sortrule": "distance",
+      "extensions": "base"
+    },
+    "returns": ["name", "address", "distance_m", "location", "type", "rating"]
+  },
+  {
+    "name": "search_brand_in_mall",
+    "description": "核对指定商场附近是否存在某个品牌的门店。高德没有「商场内品牌清单」接口，因此以商场坐标为中心做周边检索来近似判断。判断「既有 A 又有 B」时必须对每个品牌分别调用。",
+    "method": "GET",
+    "endpoint": "/v3/place/around",
+    "provider": "https://restapi.amap.com",
+    "params": {
+      "key": "${AMAP_API_KEY}",
+      "location": "商场坐标，格式 lng,lat",
+      "keywords": "品牌名，如「倍轻松」",
+      "radius": "核对半径（米），默认 500",
+      "sortrule": "distance"
+    },
+    "returns": ["brand", "matched", "store_count", "stores[]"],
+    "limitation": "半径内检索是近似判断，命中不代表门店一定在商场内部；未命中不代表品牌在商场内没有专柜。"
+  },
+  {
+    "name": "measure_distance",
+    "description": "测量起点到终点的驾车距离和预计耗时。用户问「哪个更近」「过去要多久」时调用，作为排序和说明的量化依据。",
+    "method": "GET",
+    "endpoint": "/v3/distance",
+    "provider": "https://restapi.amap.com",
+    "params": {
+      "key": "${AMAP_API_KEY}",
+      "origins": "起点坐标，格式 lng,lat",
+      "destination": "终点坐标，格式 lng,lat",
+      "type": "1 = 驾车"
+    },
+    "returns": ["distance_m", "duration_s", "duration_min"]
+  }
+]

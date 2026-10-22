@@ -1,26 +1,26 @@
 const en = {
   // Header
-  "app.title": "OpenAI Agents Starter",
-  "app.subtitle": "Running on EdgeOne Makers with session memory & Agent Tools",
+  "app.title": "Travel Decision Assistant",
+  "app.subtitle": "Tell me where you are and what brands you need — I'll find the nearest mall",
 
   // Empty state
-  "empty.title": "OpenAI Agents Starter",
-  "empty.hint": "I'm an OpenAI Agent running on EdgeOne with custom tools and session memory. I can help with weather, clothing advice, translation, and text statistics.",
-  "empty.features": "EdgeOne Store · Session Memory · Agent Tools",
+  "empty.title": "Travel Decision Assistant",
+  "empty.hint": "I can find malls near you, check whether they carry the brands you want, and rank them by distance. Tell me your location and the brands to get started.",
+  "empty.features": "Amap Maps · Brand Check · Distance Ranking · Follow-ups",
 
   // Chat input
-  "chat.placeholder": "Type a message...  ⏎ Send · Shift+⏎ Newline",
-  "chat.hint": "Powered by OpenAI Agents SDK + EdgeOne Makers · Demo only",
+  "chat.placeholder": "Where are you, and what are you looking for...  ⏎ Send · Shift+⏎ Newline",
+  "chat.hint": "Powered by OpenAI Agents SDK + Amap Maps + EdgeOne Makers",
 
   // Preset questions
-  "preset.1": "What is the weather like in Beijing now? Any clothing suggestions?",
-  "preset.2": "Translate \"Hello, welcome to Beijing!\" into Chinese and count the characters.",
+  "preset.1": "I'm near Honglian South Road metro station. Recommend a mall that has both Breo and Xitingcunwu.",
+  "preset.2": "If both brands aren't required, is there anything closer?",
 
   // Tool indicators
-  "tool.weather": "Weather",
-  "tool.clothing": "Clothing",
-  "tool.translate": "Translate",
-  "tool.statistics": "Statistics",
+  "tool.location": "Geocode",
+  "tool.malls": "Find malls",
+  "tool.brand": "Check brand",
+  "tool.distance": "Distance",
 
   // Status & errors
   "status.error": "Request failed. Please check if the backend service is running.",

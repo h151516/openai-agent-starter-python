@@ -58,20 +58,20 @@ export default function CodeViewer() {
           <L n={4}><Cmt t="# 1. Define tools with @function_tool" /></L>
           <L n={5}><Dec t="@function_tool" /></L>
           <L n={6}>
-            <Kw t="def " /><Fn t="get_weather" /><Op t="(" />
-            <Va t="city" /><Op t=": " /><Ty t="Annotated" /><Op t="[" />
-            <Ty t="str" /><Op t=", " /><Str t='"The city to get weather for"' />
+            <Kw t="def " /><Fn t="search_nearby_malls" /><Op t="(" />
+            <Va t="location" /><Op t=": " /><Ty t="Annotated" /><Op t="[" />
+            <Ty t="str" /><Op t=", " /><Str t='"lng,lat from resolve_location"' />
             <Op t="]) -> " /><Ty t="str" /><Op t=":" />
           </L>
           <L n={7}>
-            <I1><Doc t='"""Get the current weather for a specified city."""' /></I1>
+            <I1><Doc t='"""Search malls around the given coordinate."""' /></I1>
           </L>
           <L n={8}>
-            <I1><Cmt t="# ..." /></I1>
+            <I1><Cmt t="# 高德 /v3/place/around" /></I1>
           </L>
           <L n={9} />
           <L n={10}>
-            <Va t="TOOLS" /><Op t=" = [" /><Fn t="get_weather" /><Op t=", " /><Cmt t="# More tools..." /><Op t="]" />
+            <Va t="TOOLS" /><Op t=" = [" /><Fn t="resolve_location" /><Op t=", " /><Fn t="search_nearby_malls" /><Op t=", " /><Cmt t="# ..." /><Op t="]" />
           </L>
           <L n={11} />
 
