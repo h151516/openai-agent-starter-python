@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useT } from '../i18n';
 
-const REPO_URL = 'https://github.com/TencentEdgeOne/openai-agent-starter-python';
+// 指向本项目的 Fork（不是上游模板），部署后点这个角标要能回到自己的仓库
+const REPO_URL = 'https://github.com/h151516/openai-agent-starter-python';
 
 /**
  * Floating GitHub badge anchored to the bottom-right viewport corner.

@@ -43,6 +43,9 @@
   border: 1px solid var(--bot-border);
   color: var(--text-primary);
   border-radius: var(--radius-md) var(--radius-md) var(--radius-md) 4px;
+  /* 回答里常带「商场 × 品牌」对照表，68% 宽会把四列挤成一团，
+     这里单独放宽；用户气泡仍是 68%，两边视觉上更好区分。 */
+  max-width: 90%;
 }
 
 .userBubble {
@@ -136,15 +139,30 @@
   margin: 0.5em 0;
   color: var(--text-secondary);
 }
+/* 表格多列时最容易把气泡撑破，单独套一层滚动容器：
+   只让表格自身横向滚动，结论/理由等正文保持原位不动。 */
+.tableWrap {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0.5em 0;
+  -webkit-overflow-scrolling: touch;
+}
+.tableWrap :global(table) {
+  margin: 0;
+}
+
 .markdown :global(table) {
   border-collapse: collapse;
   margin: 0.5em 0;
   font-size: 0.85em;
+  width: 100%;
 }
 .markdown :global(th),
 .markdown :global(td) {
   border: 1px solid var(--bg-border);
   padding: 0.35em 0.6em;
+  word-break: break-word;
+  white-space: normal;
 }
 .markdown :global(th) {
   background: rgba(255, 255, 255, 0.04);

@@ -1,0 +1,64 @@
+# 每次推送到 main / 提 PR 时自动跑一遍「构建 + 离线自检」。
+#
+# 为什么要这个 workflow：
+#   1. 上游 starter 仓库没有带 .github/，推上去之后 Actions 页是空的，
+#      课程要求的 actions-success 截图无从下手；
+#   2. 前端能编译不代表 Agent 能跑，所以这里把 tests/ 下三套离线测试
+#      一起跑，任何一次改动把工具链改坏都会在 CI 里立刻变红。
+#
+# 注意：这个 workflow 只做**校验**，不做部署。
+#   本项目是 Agent 项目（agents/ 里的 Python 运行时 + dist 静态前端），
+#   正式上线走「Makers 控制台 → Git 集成 → 新建部署」，由平台自己构建，
+#   推 main 即触发，比 `edgeone makers deploy ./dist` 可靠（后者只传静态产物，
+#   会把 agents/ 运行时漏掉）。
+name: CI · 构建校验
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 准备 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 安装前端依赖
+        run: npm ci
+
+      - name: 类型检查 + 构建前端
+        run: npm run build
+
+      - name: 准备 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装 Agent 依赖
+        run: pip install -r requirements.txt
+
+      - name: 工具层自检（24 项）
+        run: python tests/offline_check.py
+
+      - name: 业务链路自检（14 项）
+        run: python tests/mock_flow.py
+
+      - name: 演示链路自检（12 项）
+        run: python tests/local_demo_check.py
+
+      - name: 构建产物存档
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 7

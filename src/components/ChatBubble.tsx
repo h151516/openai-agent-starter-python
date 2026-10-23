@@ -78,7 +78,20 @@ export default memo(function ChatBubble({ message }: Props) {
           message.content
         ) : (
           <div className={`${styles.markdown} ${message.streaming ? styles.markdownStreaming : ''}`}>
-            <Markdown remarkPlugins={[remarkGfm]}>{normalizeMarkdown(message.content)}</Markdown>
+            <Markdown
+              remarkPlugins={[remarkGfm]}
+              // 表格单独包一层横向滚动容器：列多时只让表格自己滚，
+              // 不要把整条气泡（连同上面的结论文字）一起挤出可视区。
+              components={{
+                table: ({ node: _node, ...props }) => (
+                  <div className={styles.tableWrap}>
+                    <table {...props} />
+                  </div>
+                ),
+              }}
+            >
+              {normalizeMarkdown(message.content)}
+            </Markdown>
           </div>
         )}
         <span className={styles.time}>
