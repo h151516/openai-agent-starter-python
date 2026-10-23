@@ -36,6 +36,9 @@ def wait_idle(page, timeout: int = 90_000) -> None:
         timeout=timeout,
     )
     page.wait_for_timeout(1200)  # 留点时间给动画/滚动落位
+    page.mouse.move(4, 4)        # 鼠标移开，避免截图里留下预设问题的悬停高亮
+    page.evaluate("() => { document.activeElement instanceof HTMLElement && document.activeElement.blur(); window.getSelection()?.removeAllRanges(); }")
+    page.wait_for_timeout(350)   # 等按钮的 hover/focus 过渡色退干净再截
 
 
 def main() -> int:
@@ -48,7 +51,7 @@ def main() -> int:
             args=["--no-proxy-server", "--force-device-scale-factor=2"],
         )
         ctx = browser.new_context(
-            viewport={"width": 1600, "height": 900},
+            viewport={"width": 1600, "height": 1100},
             device_scale_factor=2,
             locale="zh-CN",
         )

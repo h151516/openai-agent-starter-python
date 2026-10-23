@@ -105,6 +105,10 @@ function AppInner() {
   const [debugEvents, setDebugEvents] = useState<RawSseEvent[]>([]);
   const [rightPanelMode, setRightPanelMode] = useState<'code' | 'debug'>('code');
 
+  // 运行时模式（本地演示 / 内置样例数据）。只在本地 `local_dev.py` 有这个接口，
+  // 线上 Makers 不返回 /status，取不到就当作正常模式，不显示任何角标。
+  const [runtimeMode, setRuntimeMode] = useState<{ demo: boolean; mock: boolean } | null>(null);
+
   // Conversation list (sidebar) state
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [conversationsLoading, setConversationsLoading] = useState(true);
@@ -124,6 +128,21 @@ function AppInner() {
   useEffect(() => {
     conversationIdRef.current = activeConversationId;
   }, [activeConversationId]);
+
+  // 探一次运行时模式：让「演示模式 / 样例数据」在页面上常驻可见，
+  // 而不是只在每条回答的正文里标一句（截图和验收时一眼能看出数据来源）。
+  useEffect(() => {
+    let alive = true;
+    fetch('/status')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (alive && d && typeof d === 'object') {
+          setRuntimeMode({ demo: !!d.demo, mock: !!d.mock });
+        }
+      })
+      .catch(() => { /* 线上没有这个接口，安静跳过 */ });
+    return () => { alive = false; };
+  }, []);
 
   // Update lamp labels when language changes
   useEffect(() => {
@@ -578,6 +597,18 @@ function AppInner() {
                 <p className={styles.title}>{t("app.title")}</p>
                 <p className={styles.subtitle}>{t("app.subtitle")}</p>
               </div>
+              {runtimeMode && (runtimeMode.demo || runtimeMode.mock) && (
+                <span
+                  className={styles.modeBadge}
+                  title={t("status.hint")}
+                >
+                  {runtimeMode.demo && runtimeMode.mock
+                    ? t("status.demoMock")
+                    : runtimeMode.demo
+                      ? t("status.demo")
+                      : t("status.mock")}
+                </span>
+              )}
             </div>
             <ToolIndicators lamps={lamps} />
           </header>

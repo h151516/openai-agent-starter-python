@@ -3,6 +3,12 @@ const zh = {
   "app.title": "出行决策助手",
   "app.subtitle": "告诉我你在哪、想逛什么品牌，我帮你挑最近的商场",
 
+  // 顶部模式角标（仅本地 local_dev.py 会返回 /status）
+  "status.demo": "演示模式 · 无模型",
+  "status.mock": "样例数据",
+  "status.demoMock": "演示模式 · 样例数据",
+  "status.hint": "当前没有模型 Key，回答由本地规则生成；地图数据来自内置样例（AMAP_MOCK=1），不是高德实时结果",
+
   // Empty state
   "empty.title": "出行决策助手",
   "empty.hint": "我可以帮你查询附近的商场，核对里面有没有你想要的品牌门店，再按距离给出推荐。试试告诉我你的位置和想找的品牌。",

@@ -138,6 +138,22 @@
   align-items: center;
   gap: 12px;
 }
+
+/* 运行时模式角标：只在本地演示 / 样例数据时出现，提示当前数据来源 */
+.modeBadge {
+  flex-shrink: 0;
+  align-self: center;
+  margin-left: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 200, 66, .45);
+  background: rgba(245, 200, 66, .1);
+  color: var(--accent-gold);
+  font-size: .62rem;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  cursor: help;
+}
 .logo {
   font-size: 1.8rem;
   color: var(--accent-gold);

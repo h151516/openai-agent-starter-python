@@ -3,6 +3,12 @@ const en = {
   "app.title": "Travel Decision Assistant",
   "app.subtitle": "Tell me where you are and what brands you need — I'll find the nearest mall",
 
+  // Runtime mode badge (only served by the local dev runtime via /status)
+  "status.demo": "Demo mode · no model",
+  "status.mock": "Sample data",
+  "status.demoMock": "Demo mode · sample data",
+  "status.hint": "No model key configured: replies come from local rules, and map data is the built-in sample set (AMAP_MOCK=1) rather than live Amap results",
+
   // Empty state
   "empty.title": "Travel Decision Assistant",
   "empty.hint": "I can find malls near you, check whether they carry the brands you want, and rank them by distance. Tell me your location and the brands to get started.",
