@@ -1,6 +1,6 @@
 # submission/ 作业提交材料
 
-对应手册第十章要求的六项证据。**已完成 4 项**，剩下 2 项要你登录控制台后截。
+对应手册第十章要求的六项证据。**已完成 5 项**，剩 2 项在 Makers 部署后补。
 
 | 文件 | 对应手册 | 状态 | 说明 |
 |---|---|---|---|
@@ -8,7 +8,7 @@
 | `02-scenario1.png` | `normal-result.png` 正常请求结果 | ✅ 已生成 | 场景一：红莲南路 + 既要倍轻松又要西厅村屋 → 推荐广安门华联购物中心 785m，附命中对照表 |
 | `03-scenario2.png` | `follow-up-result.png` 连续追问结果 | ✅ 已生成 | 场景二：不要求两个品牌同时存在 → 换成更近的天虹商场(广安门店) 494m，**没有再追问位置** |
 | `answers.txt` | —— | ✅ 已生成 | 两轮回答的纯文本，方便粘贴进实验报告 |
-| `actions-success.png` | GitHub Actions 成功 | ⬜ 待截 | 仓库推到 GitHub 后，Actions 页会跑 `CI · 构建校验`，绿勾截一张 |
+| `actions-success.png` | GitHub Actions 成功 | ✅ 已截（2026-10-27） | 推送 `95db1d2` 后 `CI · 构建校验 #1` 绿勾，运行 #57 |
 | `deploy-success.png` | Makers 部署成功 | ⬜ 待截 | Makers 控制台新建部署成功后，项目概览页截一张 |
 | `public-entry.txt` | 公开预览地址 | ⬜ 待填 | 部署成功拿到 `*.edgeone.cool` 地址后写一行即可 |
 
