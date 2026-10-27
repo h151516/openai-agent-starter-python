@@ -32,18 +32,6 @@ load_dotenv()
 logger = create_logger("chat")
 
 
-# ========== LLM Model ==========
-llm_client = AsyncOpenAI(
-    api_key=os.getenv("AI_GATEWAY_API_KEY"),
-    base_url=os.getenv("AI_GATEWAY_BASE_URL"),
-)
-
-llm_model = OpenAIChatCompletionsModel(
-    model=os.getenv("AI_GATEWAY_MODEL", "@makers/deepseek-v4-flash"),
-    openai_client=llm_client,
-)
-
-
 # ========== Agent ==========
 INSTRUCTIONS = (
     "你是「出行决策助手」，帮用户在一个位置附近找到满足品牌需求的商场，并给出可解释的推荐。\n"
@@ -52,7 +40,9 @@ INSTRUCTIONS = (
     "1. **定位**：用户给出位置后，先调用 resolve_location 拿到经纬度和城市。用户没说城市就不猜。\n"
     "2. **找商场**：调用 search_nearby_malls，以解析出的坐标为中心检索附近商场。用户有距离偏好时据此调整 radius。\n"
     "3. **核对品牌**：对每个候选商场，逐个品牌调用 search_brand_in_mall。用户要求「既有 A 又有 B」时，"
-    "两个品牌都要查，并且只有两个都 matched=true 才算满足。\n"
+    "两个品牌都要查，并且只有两个都 matched=true 才算满足。"
+    "候选商场超过 5 家时，只核对距离最近的 5 家（回答里说明只核对了最近 5 家），"
+    "避免请求数过多触发高德 QPS 限流。\n"
     "4. **算距离**：需要比较远近或估算通勤时间时调用 measure_distance；用户问「怎么去」「走路要多久」时调用 plan_walking_route，并把步行距离/耗时告诉用户（超过 5 公里时建议改驾车或公交）。\n"
     "5. **推荐**：优先满足品牌条件，其次按距离由近到远排序。给出推荐结论 + 每个候选的关键数据 + 为什么推荐它。\n"
     "\n"
@@ -73,12 +63,28 @@ INSTRUCTIONS = (
     "- 保持简洁，不给无关的寒暄。"
 )
 
-agent = Agent(
-    name="出行决策助手",
-    instructions=INSTRUCTIONS,
-    tools=TRAVEL_TOOLS,
-    model=llm_model,
-)
+
+# ========== LLM Model ==========
+# 注意：AsyncOpenAI 的连接池绑定在创建它的事件循环上。本地运行时（local_dev.py）
+# 每个请求一个新事件循环，模块级单例会在第二个请求时报 "Event loop is closed"。
+# 因此这里只在模块级保存配置，客户端与 Agent 在每次请求时重新构建，
+# 对平台运行时（单循环）也没有额外负担。
+def _build_agent() -> Agent:
+    """按当前请求的事件循环构建一个全新的模型客户端和 Agent。"""
+    llm_client = AsyncOpenAI(
+        api_key=os.getenv("AI_GATEWAY_API_KEY"),
+        base_url=os.getenv("AI_GATEWAY_BASE_URL"),
+    )
+    llm_model = OpenAIChatCompletionsModel(
+        model=os.getenv("AI_GATEWAY_MODEL", "@makers/deepseek-v4-flash"),
+        openai_client=llm_client,
+    )
+    return Agent(
+        name="出行决策助手",
+        instructions=INSTRUCTIONS,
+        tools=TRAVEL_TOOLS,
+        model=llm_model,
+    )
 
 
 # ========== SSE Helper ==========
@@ -98,7 +104,7 @@ async def _event_stream(
     Accepts cancel_signal to enable cancellation — when set,
     the loop breaks and the SDK releases its connection.
     """
-    result = Runner.run_streamed(agent, input=message, session=session)
+    result = Runner.run_streamed(_build_agent(), input=message, session=session, max_turns=40)
 
     async for event in result.stream_events():
         # Check cancel between each event

@@ -18,6 +18,7 @@ Agent Tools — 出行决策 Agent 的地图工具集
 import asyncio
 import json
 import os
+import time
 from typing import Annotated
 
 import httpx
@@ -44,6 +45,19 @@ MALL_TYPES = "060100"
 # 演示模式每次工具的假延迟（秒）：让前端的"工具灯牌依次点亮"看得出先后顺序
 MOCK_LATENCY = 0.25
 
+# ---------- 高德 QPS 保护 ----------
+# 个人开发者 Key 的搜索类接口并发上限只有约 3 QPS；而模型经常一次并行发起
+# 十几个品牌核对请求，直接触发 CUQPS_HAS_EXCEEDED_THE_LIMIT。
+# 对策：
+#   1. 全局锁 + 最小间隔，把所有对高德的请求串行化并节流到 ~3 QPS 以内；
+#   2. 命中限流错误码时按指数退避自动重试，对上层（模型）完全透明。
+AMAP_MIN_INTERVAL = 0.36  # 秒，约 2.8 QPS，留一点余量
+QPS_RETRY_TIMES = 3       # 限流重试次数
+QPS_RETRY_BASE_DELAY = 1.0  # 首次重试等待（秒），之后 ×2
+
+_amap_lock = asyncio.Lock()
+_last_request_at = 0.0
+
 # 识别为"已配置"的占位值，避免把模板里的假 Key 当成真的
 PLACEHOLDER_KEYS = {"", "your-api-key", "your_key", "sk-xxx", "xxx"}
 
@@ -63,28 +77,50 @@ def _api_key() -> str:
 
 
 async def _call(path: str, params: dict) -> dict:
-    """异步调用高德接口并统一处理业务错误码。
+    """异步调用高德接口：全局节流 + 限流自动重试。
 
     高德返回 status=1 表示成功；status=0 时 info 里是错误原因
-    （常见：INVALID_USER_KEY / DAILY_QUERY_OVER_LIMIT / INVALID_PARAMS）。
+    （常见：INVALID_USER_KEY / DAILY_QUERY_OVER_LIMIT / CUQPS_HAS_EXCEEDED_THE_LIMIT）。
 
     AMAP_MOCK=1 时不发请求，改用内置演示数据（见 _fixtures.py），
     返回结构与真实接口一致，只是多一个 `_mock: True` 标记。
     """
+    global _last_request_at
+
     if mock_enabled():
         await asyncio.sleep(MOCK_LATENCY)
         return {**_fixtures.route(path, params), "_mock": True}
 
     payload = {"key": _api_key(), "output": "JSON", **params}
-    async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
-        resp = await client.get(f"{AMAP_BASE}{path}", params=payload)
-        resp.raise_for_status()
-        data = resp.json()
+    last_info = "UNKNOWN_ERROR"
 
-    if str(data.get("status")) != "1":
-        info = data.get("info", "UNKNOWN_ERROR")
-        raise RuntimeError(f"高德接口返回错误：{info}（infocode={data.get('infocode')}）")
-    return data
+    for attempt in range(QPS_RETRY_TIMES + 1):
+        # 节流：全局锁保证同一时刻只有一个高德请求，且两次请求间隔不小于
+        # AMAP_MIN_INTERVAL。即使模型并行发起 20 个工具调用，这里也会
+        # 自动排成一条 ~3 QPS 的队，而不是冲爆配额。
+        async with _amap_lock:
+            wait = AMAP_MIN_INTERVAL - (time.monotonic() - _last_request_at)
+            if wait > 0:
+                await asyncio.sleep(wait)
+            async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
+                resp = await client.get(f"{AMAP_BASE}{path}", params=payload)
+                resp.raise_for_status()
+                data = resp.json()
+            _last_request_at = time.monotonic()
+
+        if str(data.get("status")) == "1":
+            return data
+
+        last_info = data.get("info", "UNKNOWN_ERROR")
+        infocode = str(data.get("infocode", ""))
+        throttled = "QPS" in last_info.upper() or "QPS" in infocode.upper()
+        if throttled and attempt < QPS_RETRY_TIMES:
+            await asyncio.sleep(QPS_RETRY_BASE_DELAY * (2**attempt))
+            continue
+        # 非限流错误（Key 无效 / 配额用尽 / 参数错误）立即抛出，不浪费重试
+        raise RuntimeError(f"高德接口返回错误：{last_info}（infocode={data.get('infocode')}）")
+
+    raise RuntimeError(f"高德接口持续限流：{last_info}")
 
 
 def _dump(payload: dict, data: dict | None = None) -> str:
