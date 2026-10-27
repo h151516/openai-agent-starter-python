@@ -88,9 +88,15 @@ async def invoke(tool, args: dict) -> str:
 
 # ---------- 1. 工具注册检查 ----------
 print("\n=== 1. 工具注册 ===")
-expected = ["resolve_location", "search_nearby_malls", "search_brand_in_mall", "measure_distance"]
+expected = [
+    "resolve_location",
+    "search_nearby_malls",
+    "search_brand_in_mall",
+    "measure_distance",
+    "plan_walking_route",
+]
 names = [t.name for t in tools_mod.TRAVEL_TOOLS]
-check("四个工具数量正确", len(names) == 4, f"实际 {names}")
+check("五个工具数量正确", len(names) == 5, f"实际 {names}")
 check("工具名与提示词一致", names == expected, f"实际 {names}")
 
 for tool in tools_mod.TRAVEL_TOOLS:
@@ -154,6 +160,24 @@ GEO_RESPONSE = {
 
 DIST_RESPONSE = {"status": "1", "info": "OK", "results": [{"distance": "2100", "duration": "720"}]}
 
+WALK_RESPONSE = {
+    "status": "1",
+    "info": "OK",
+    "count": "1",
+    "route": {
+        "paths": [
+            {
+                "distance": "1800",
+                "duration": "1440",
+                "steps": [
+                    {"instruction": "向南步行", "distance": "500", "duration": "400"},
+                    {"instruction": "右转", "distance": "1300", "duration": "1040"},
+                ],
+            }
+        ]
+    },
+}
+
 
 async def run_parse_tests():
     print("\n=== 2. 正常响应解析 ===")
@@ -194,6 +218,25 @@ async def run_parse_tests():
     data = json.loads(raw)
     check("距离 2100m", data.get("distance_m") == 2100)
     check("耗时换算 12.0 分钟", data.get("duration_min") == 12.0)
+
+    use_transport(json_handler(WALK_RESPONSE))
+    raw = await invoke(
+        tools_mod.plan_walking_route, {"origin": "116.341,39.884", "destination": "116.374,39.912"}
+    )
+    data = json.loads(raw)
+    check("步行距离 1800m", data.get("distance_m") == 1800, raw[:120])
+    check("步行耗时 24.0 分钟", data.get("duration_min") == 24.0, raw[:120])
+    check("分段指引只回传前 6 段", data.get("step_count") == 2 and len(data.get("steps", [])) == 2)
+    check("未截断时不带误导标记", data.get("steps_truncated") is False)
+
+    # 空路线（如跨海/超远）要返回 error，不能编路径
+    use_transport(json_handler({"status": "1", "info": "OK", "count": "0", "route": {"paths": []}}))
+    raw = await invoke(
+        tools_mod.plan_walking_route, {"origin": "116.3,39.8", "destination": "121.4,31.2"}
+    )
+    data = json.loads(raw)
+    check("无步行路线返回 error", "error" in data, raw[:120])
+    check("error 附带可执行 hint", bool(data.get("hint")))
 
 
 # ---------- 3. 异常处理 ----------

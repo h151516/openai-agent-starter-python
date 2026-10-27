@@ -212,4 +212,46 @@ def route(path: str, params: dict) -> dict:
             "results": [{"origin_id": "1", "dest_id": "1", "distance": str(drive), "duration": str(duration)}],
         }
 
+    # ---- 4. 步行路线规划 ----
+    if path == "/direction/walking":
+        origin = params.get("origin") or ""
+        dest = params.get("destination") or ""
+        straight = _haversine_m(origin, dest)
+        # 步行距离 ≈ 直线 × 1.25（比驾车绕路少），速度按 4.5km/h 折算
+        walk = int(straight * 1.25)
+        duration = int(walk / (4.5 * 1000 / 3600))
+        steps = [
+            {
+                "instruction": "沿起点所在道路向南步行进入主路",
+                "distance": str(int(walk * 0.3)),
+                "duration": str(int(duration * 0.3)),
+            },
+            {
+                "instruction": "在第 1 个路口向右转，继续沿主路步行",
+                "distance": str(int(walk * 0.45)),
+                "duration": str(int(duration * 0.45)),
+            },
+            {
+                "instruction": "到达目的地附近，沿入口步行即到",
+                "distance": str(int(walk * 0.25)),
+                "duration": str(int(duration * 0.25)),
+            },
+        ]
+        return {
+            "status": "1",
+            "info": "OK",
+            "count": "1",
+            "route": {
+                "origin": origin,
+                "destination": dest,
+                "paths": [
+                    {
+                        "distance": str(walk),
+                        "duration": str(duration),
+                        "steps": steps,
+                    }
+                ],
+            },
+        }
+
     raise RuntimeError(f"mock 未覆盖的接口：{path}")

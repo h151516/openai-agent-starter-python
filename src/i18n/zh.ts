@@ -27,6 +27,7 @@ const zh = {
   "tool.malls": "商场检索",
   "tool.brand": "品牌核对",
   "tool.distance": "距离测量",
+  "tool.walk": "步行规划",
 
   // Status & errors
   "status.error": "⚠️ 请求失败，请检查后端服务是否启动。",

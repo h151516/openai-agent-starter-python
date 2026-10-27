@@ -329,10 +329,65 @@ async def measure_distance(
         return _err(e, "检查起终点坐标格式，距离测量接口单次仅支持一个终点")
 
 
+# ========== 工具 5：步行路线规划 ==========
+@function_tool
+async def plan_walking_route(
+    origin: Annotated[str, "起点坐标，格式为「经度,纬度」，通常是用户位置"],
+    destination: Annotated[str, "终点坐标，格式为「经度,纬度」，通常是推荐商场的坐标"],
+) -> str:
+    """规划起点到终点的步行路线，返回步行距离、预计耗时和分段指引。
+
+    用户问「怎么去」「走路要多久」「步行可行吗」时调用本工具；
+    只关心「哪个更近」时用 measure_distance（驾车）即可。
+    步行距离超过 5 公里时应在回答里提示用户考虑驾车或公交。
+    """
+    try:
+        data = await _call(
+            "/direction/walking",
+            {"origin": origin, "destination": destination},
+        )
+        route = data.get("route") or {}
+        paths = route.get("paths") or []
+        if not paths:
+            return _dump(
+                {
+                    "error": "未规划出步行路线",
+                    "hint": "起终点可能相距过远、坐标无效，或两点间无步行可达路径",
+                },
+                data,
+            )
+
+        path = paths[0]
+        duration = _to_int(path.get("duration"))
+        steps = [
+            {
+                "instruction": _text(s.get("instruction")),
+                "distance_m": _to_int(s.get("distance")),
+            }
+            for s in (path.get("steps") or [])
+        ]
+        return _dump(
+            {
+                "origin": origin,
+                "destination": destination,
+                "distance_m": _to_int(path.get("distance")),
+                "duration_s": duration,
+                "duration_min": round(duration / 60, 1),
+                "step_count": len(steps),
+                "steps": steps[:6],  # 只回传前几段，避免撑爆模型上下文
+                "steps_truncated": len(steps) > 6,
+            },
+            data,
+        )
+    except Exception as e:
+        return _err(e, "检查起终点坐标格式；步行规划仅支持国内坐标")
+
+
 # 注册给 Agent 的工具清单
 TRAVEL_TOOLS = [
     resolve_location,
     search_nearby_malls,
     search_brand_in_mall,
     measure_distance,
+    plan_walking_route,
 ]

@@ -132,6 +132,18 @@ async def main():
     check("驾车距离 > 直线距离（绕路系数）", dist.get("distance_m", 0) > nearest["distance_m"])
     check("耗时换算为正数", dist.get("duration_min", 0) > 0)
 
+    print("\n=== 6. 步行路线 ===")
+    walk = await invoke(
+        tools_mod.plan_walking_route,
+        {"origin": origin, "destination": nearest["location"]},
+    )
+    print(f"        步行 {walk.get('distance_m')}m / {walk.get('duration_min')} 分钟，"
+          f"{walk.get('step_count')} 段指引")
+    check("步行距离为正数", walk.get("distance_m", 0) > 0)
+    check("步行耗时为正数", walk.get("duration_min", 0) > 0)
+    check("带分段指引", walk.get("step_count", 0) >= 1 and bool(walk.get("steps")))
+    check("标注数据来源为 mock", walk.get("source") == "mock")
+
     print(f"\n{'=' * 44}")
     print(f"通过 {PASS} 项，失败 {FAIL} 项")
     return 1 if FAIL else 0

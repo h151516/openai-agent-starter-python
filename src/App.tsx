@@ -24,18 +24,20 @@ import { I18nProvider, LangToggle, useT, MessageKeys } from './i18n';
 import { deleteSnapshot, loadSnapshot, saveSnapshot } from './lib/chatUiStore';
 import styles from './App.module.css';
 
-const LAMP_IDS = ['resolve_location', 'search_nearby_malls', 'search_brand_in_mall', 'measure_distance'] as const;
+const LAMP_IDS = ['resolve_location', 'search_nearby_malls', 'search_brand_in_mall', 'measure_distance', 'plan_walking_route'] as const;
 const LAMP_ICONS: Record<string, string> = {
   resolve_location: '📍',
   search_nearby_malls: '🏬',
   search_brand_in_mall: '🛍️',
   measure_distance: '📏',
+  plan_walking_route: '🚶',
 };
 const LAMP_I18N_KEYS: Record<string, string> = {
   resolve_location: 'tool.location',
   search_nearby_malls: 'tool.malls',
   search_brand_in_mall: 'tool.brand',
   measure_distance: 'tool.distance',
+  plan_walking_route: 'tool.walk',
 };
 
 const CONVERSATION_ID_STORAGE_KEY = 'eo_conversation_id';

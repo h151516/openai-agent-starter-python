@@ -27,6 +27,7 @@ const en = {
   "tool.malls": "Find malls",
   "tool.brand": "Check brand",
   "tool.distance": "Distance",
+  "tool.walk": "Walking route",
 
   // Status & errors
   "status.error": "Request failed. Please check if the backend service is running.",

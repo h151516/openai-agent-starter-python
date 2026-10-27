@@ -79,11 +79,12 @@ async def main():
     print(t1)
     check("只发 text_delta / tool_called 两种帧（done 由 local_dev 统一补）",
           set(ev1) <= {"text_delta", "tool_called"}, str(set(ev1)))
-    check("工具顺序 = 定位→商场→品牌×N→距离",
+    check("工具顺序 = 定位→商场→品牌×N→距离→步行",
           tools1[0] == "resolve_location"
           and tools1[1] == "search_nearby_malls"
-          and tools1[-1] == "measure_distance"
-          and set(tools1[2:-1]) == {"search_brand_in_mall"}, str(tools1))
+          and tools1[-2] == "measure_distance"
+          and tools1[-1] == "plan_walking_route"
+          and set(tools1[2:-2]) == {"search_brand_in_mall"}, str(tools1))
     check("推荐唯一同时命中两个品牌的商场", "广安门华联购物中心" in t1)
     check("表格里两个品牌都打勾", "✅ | ✅" in t1, t1[-300:])
     check("标注了演示数据来源", "演示样例" in t1)

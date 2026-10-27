@@ -9,11 +9,11 @@
 这个 Agent 到底做了什么 —— 演示、截图、验收都会卡住。
 
 本文件是一条**只在本机生效**的降级路径：没有模型可用时，用一个规则式规划器
-按同样的顺序调用真实的四个工具，再把结果拼成固定的回答，并通过**完全相同
+按同样的顺序调用真实的五个工具，再把结果拼成固定的回答，并通过**完全相同
 的 SSE 协议**推给前端。因此：
 
   - 前端一行不改，工具灯牌照样依次点亮，逐字输出照样有；
-  - 调用的还是 agents/_tools.py 里的四个工具，业务逻辑是真的；
+  - 调用的还是 agents/_tools.py 里的五个工具，业务逻辑是真的；
   - 只有"把结果组织成自然语言"这一步从模型换成了模板，所以每条回答开头
     都会明确标注「本地演示模式 · 无模型」。
 
@@ -222,10 +222,15 @@ async def stream(
 
     best = picked[0]
 
-    # ---- 5. 量距离（给最优候选算驾车） ----
+    # ---- 5. 量距离（给最优候选算驾车 + 步行两种） ----
     yield sse("tool_called", {"tool": "measure_distance"})
     dist = await _invoke(
         tools["measure_distance"],
+        {"origin": origin, "destination": best["mall"]["location"]},
+    )
+    yield sse("tool_called", {"tool": "plan_walking_route"})
+    walk = await _invoke(
+        tools["plan_walking_route"],
         {"origin": origin, "destination": best["mall"]["location"]},
     )
 
@@ -255,6 +260,14 @@ async def stream(
             f"到 {best['mall']['name']} 驾车约 {_fmt_m(dist['distance_m'])}"
             f"（{dist['duration_min']} 分钟）。\n"
         )
+
+    if walk.get("distance_m"):
+        walk_note = (
+            f"步行约 {_fmt_m(walk['distance_m'])}（约 {walk['duration_min']} 分钟）。"
+        )
+        if walk["distance_m"] > 5000:
+            walk_note += "距离较远，建议考虑驾车或公交。"
+        lines.append(walk_note + "\n")
 
     reasons: list[str] = []
     if brands and not any_mode:
