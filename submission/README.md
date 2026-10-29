@@ -1,18 +1,33 @@
 # submission/ 作业提交材料
 
-对应手册第十章要求的六项证据。**已完成 5 项**，剩 2 项在 Makers 部署后补。
+对应手册第十章要求的六项证据。**6/6 全部完成**（2026-10-29 线上部署验收通过）。
+
+## 材料清单
 
 | 文件 | 对应手册 | 状态 | 说明 |
 |---|---|---|---|
-| `01-local-running.png` | `local-running.png` 本地调试页面 | ✅ 已生成 | 本地 `local_dev.py` 起服务后的首页（空态：三个面板、四个工具灯牌、两条预设问题） |
-| `02-scenario1.png` | `normal-result.png` 正常请求结果 | ✅ 已生成 | 场景一：红莲南路 + 既要倍轻松又要西厅村屋 → 推荐广安门华联购物中心 785m，附命中对照表 |
-| `03-scenario2.png` | `follow-up-result.png` 连续追问结果 | ✅ 已生成 | 场景二：不要求两个品牌同时存在 → 换成更近的天虹商场(广安门店) 494m，**没有再追问位置** |
-| `answers.txt` | —— | ✅ 已生成 | 两轮回答的纯文本，方便粘贴进实验报告 |
-| `actions-success.png` | GitHub Actions 成功 | ✅ 已截（2026-10-27） | 推送 `95db1d2` 后 `CI · 构建校验 #1` 绿勾，运行 #57 |
-| `deploy-success.png` | Makers 部署成功 | ⬜ 待截 | Makers 控制台新建部署成功后，项目概览页截一张 |
-| `public-entry.txt` | 公开预览地址 | ⬜ 待填 | 部署成功拿到 `*.edgeone.cool` 地址后写一行即可 |
+| `01-local-running.png` | `local-running.png` 本地调试页面 | ✅ | 本地 `local_dev.py` 起服务后的首页（空态：三个面板、五个工具灯牌、两条预设问题） |
+| `02-scenario1.png` | `normal-result.png` 正常请求结果 | ✅ | 场景一：红莲南路 + 既要倍轻松又要西町村屋 → 推荐龙湖北京丽泽天街，附品牌命中对照表 + 步行方案（真实高德数据） |
+| `03-scenario2.png` | `follow-up-result.png` 连续追问结果 | ✅ | 场景二：不要求两个品牌同时存在 → **没有再追问位置**，复用上一轮位置重新比较 |
+| `actions-success.png` | GitHub Actions 成功 | ✅ | 推送 `95db1d2` 后 `CI · 构建校验` 绿勾（运行 #57） |
+| `deploy-success.png` | Makers 部署成功 | ✅ | 2026-10-29 16:16 EdgeOne Makers 部署成功，状态「成功」，耗时 67s，生产环境，五步流水线全绿，提交 `10cf691` |
+| `public-entry.txt` | 公开预览地址 | ✅ | 预览域名 + 令牌地址 + 部署信息，见该文件 |
+| `answers.txt` | —— | ✅ | 两轮回答纯文本，方便粘贴进实验报告 |
 
-## 重新生成前三张
+## 线上验收记录（2026-10-29 16:18）
+
+部署地址：`https://openai-agent-starter-python-dpih81wwif72.edgeone.cool`
+
+| 检查项 | 结果 |
+|---|---|
+| 首页 | HTTP 200，标题「出行决策助手 \| 附近商场品牌核验」（自定义前端已上线上） |
+| 模型链路 | SSE 流式正常，身份提示词生效（自述「出行决策助手」） |
+| 场景一 | 12 次工具调用（定位 → 商场检索 → 品牌核对 ×10），推荐龙湖北京丽泽天街，倍轻松 3F-14 + 西町村屋约 46m，附步行 1.9km/25min |
+| 场景二 | 同会话追问，**未重新询问位置**，复用上下文重新核对并给出结论 |
+| 演示标注 | 回答中无「演示数据 / 本地演示模式」字样 → `AMAP_MOCK` 未泄漏到线上 |
+| 环境变量 | 仅 `AMAP_API_KEY`，模型 Key 由平台自动注入 |
+
+## 重新生成前三张（本地）
 
 服务先起来：
 
@@ -27,14 +42,16 @@ cd "G:/机器学习/agent开发/travel-decision-agent"
 .venv/Scripts/python.exe tests/shot.py
 ```
 
-脚本用本机 Chrome（headless，不下载 Playwright 浏览器），自动点两条预设问题、等流式输出结束再截，
-所以每次重跑都是最新的界面。
+脚本用本机 Chrome（headless，不下载 Playwright 浏览器），自动点两条预设问题、等流式输出结束再截。
 
-## 这两张截图现在是什么状态
+## 线上接口自测（免浏览器）
 
-截图里回答开头有「⚙️ 本地演示模式」和「数据来源：内置演示样例」两处标注，因为当前
-`.env` 里两个 Key 都还是空的。**这是刻意的**：证明整条链路（工具调用 → 表格 → 多轮记忆）
-是真的跑通了，只是数据源换成内置样例。
-
-正式交作业前，填上 `AI_GATEWAY_API_KEY` 和 `AMAP_API_KEY`、把 `AMAP_MOCK` 改成 `0`，
-再跑一次 `tests/shot.py`，回答里就不带这两处标注了。
+```bash
+# 1) 令牌换 cookie（302 即成功，会 Set-Cookie）
+curl -c cj.txt "https://<域名>?eo_token=<token>&eo_time=<time>"
+# 2) 对话必须带 makers-conversation-id（6-36 字符）
+curl -N -X POST "https://<域名>/chat" -b cj.txt \
+  -H "Content-Type: application/json" \
+  -H "makers-conversation-id: test-001" \
+  --data-binary @body.json      # {"message":"..."}，文件须 UTF-8
+```

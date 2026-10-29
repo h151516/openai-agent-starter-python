@@ -1,0 +1,16 @@
+出行决策 Agent · 公开预览地址
+生成时间：2026-10-29 16:16
+
+永久域名（部署后长期有效）：
+https://openai-agent-starter-python-dpih81wwif72.edgeone.cool
+
+带访问令牌的预览地址（令牌有时效，仅用于验收当次访问）：
+https://openai-agent-starter-python-dpih81wwif72.edgeone.cool?eo_token=a67fdde160a5f802e0753e45682b0780&eo_time=1793261853
+
+说明：
+- 平台：腾讯云 EdgeOne Makers（国内站 console.cloud.tencent.com/edgeone/makers）
+- 项目名：openai-agent-starter-python
+- 部署 ID：dpih81wwif72
+- 生产分支：main，对应提交 10cf691
+- 部署结果：成功，构建耗时 67s，加速区域「全球可用区（含中国大陆）」
+- 环境变量：仅 AMAP_API_KEY（高德 Web 服务）；模型 Key 由平台自动注入
